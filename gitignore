@@ -1,0 +1,13 @@
+# this .gitignore should be in working directory $HOME
+# .git directory should be $HOME/.dotfiles.git (bare repo)
+
+# ignore everything in root of $HOME including:
+# regular directories, files, etc.
+# untracked dotfiles (.ssh, .rubies, .gem, etc.)
+# the repo should also ignore itself (.dotfiles.git)
+/*
+
+# don't ignore this .gitignore
+!.gitignore
+
+# don't ignore the main dotfiles (below)
