@@ -4,9 +4,7 @@ manage dotfiles with git
 
 ## TODO
 
-- test new install script, as used below (should accept URL arg)
-- update my own dotfiles repo (update README, get rid of install script)
-
+- test new install script, as used below (should accept URL arg, fail if no arg)
 
 ## initial setup
 
@@ -40,7 +38,7 @@ echo "!.bashrc" >> "${HOME}/.gitignore"
 dotfiles-git add .bashrc
 ```
 
-after committing, push to remote
+after committing, push to your remote
 
 ```bash
 dotfiles-git remote add origin <URL>
