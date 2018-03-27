@@ -5,12 +5,8 @@
 # TODO: use traps for graceful exits and cleanup?
 # TODO: optionally skip backup
 
-# set -o verbose
-# set -o xtrace
-set -o errexit # TODO: not a silver bullet
-# set -o noexec # don't exec commands (ignored by interactive shell?)
-# set -o posix # confirm to POSIX standard
-# set -o nounset # avoid errors due to unbound variables
+set -o errexit # not a silver bullet
+set -o nounset # errors on unbound variables
 
 backup_and_clone() {
   REMOTE_URL="${1}"
@@ -20,14 +16,11 @@ backup_and_clone() {
 
   REMOTE_NAME="${REMOTE_URL##*/}" # get basename
   REMOTE_NAME="${REMOTE_NAME%.git}" # remove .git
-  BARE_GIT_DIR="${TARGET_DIR}/.${REMOTE_NAME}.git" # prepend with dot; add .git back
-  TMP_DIR="${TARGET_DIR}/.${REMOTE_NAME}.tmp.${NOW}" # prepend with dot
+  BARE_GIT_DIR="${TARGET_DIR}/.${REMOTE_NAME}.git" # add .git back
+  TMP_DIR="${TARGET_DIR}/.${REMOTE_NAME}.tmp.${NOW}"
 
-  # Starting up...
-  # echo "It is currently ${NOW}"
   echo "Preparing to clone to '${BARE_GIT_DIR}'"
   echo "Checking if '${BARE_GIT_DIR}' already exists"
-  # TODO: just update all tests to double brackets [[ ]]
   if [ -d "${BARE_GIT_DIR}" ]; then
     echo "'${BARE_GIT_DIR}' already exists"
     IFS= read -n 1 -rp "Overwrite? [y/N] " YN # IFS set to null so literal space readable to $YN; -r so that \ is literally \
@@ -58,34 +51,27 @@ backup_and_clone() {
 
   echo "Preparing to move the following dotfiles from the repository into the target directory '${TARGET_DIR}'"
   OLD_WD="$(pwd)"
-  cd "${TMP_DIR}"
+  cd "${TMP_DIR}" # find returns more useful results for our purposes when run from target dir hence cd ${TARGET} && find .
+
+  # TODO: clarify what's best to represent null string $'\0' vs. ''
+  # alternatively could use find . -type f -exec but it could get kind of messy executing multiple commands in nested conditionals
+  # ...use find -print0 to print results delimited by null instead of newline (allows for filenames containing newline)
+  # ...set env variable $IFS to null, to preserve leading / trailing filename whitespace
+  # ...use read -d '' to read each null-delimited result into $SRC_FILE
+  # ...use read -r to avoid backslash interpretation in filenames (?)
   find . -type f -print0 | while IFS= read -r -d '' RESULT; do echo " ${RESULT#./}"; done
 
   BK_DIR="${TARGET_DIR}/.${REMOTE_NAME}.bk/${NOW}" # e.g., /target/.dotfiles.bk
   echo "Checking if any of the dotfiles already exist at the target directory"
 
-  # using rsync to move dotfiles from $TMP_DIR to $TARGET_DIR, backing up existing dotfiles to $BK_DIR
-  # options: -q for quiet, -a for standard archive mode, -b to backup, -I to force overwriting at dest (even if match size and time)
-  # note trailing slash on source dir (directory contents, not the directory itself)
-  # rsync -qabI --backup-dir="${BK_DIR}" "${TMP_DIR}/" "${TARGET_DIR}"
-
-  # TODO: clarify what's best way to represent null string $'\0' vs. ''
-  # a portable approximation of rsync -abI --backup-dir="${BK_DIR}" "${TMP_DIR}/" "${TARGET_DIR}" (but without actually moving to dest, only backing up)
-  # explanation of construct here: http://mywiki.wooledge.org/BashFAQ/001)
-  # alternatively could use find . -type f -exec but it could get kind of messy executing multiple commands in nested conditionals
-  # find returns more useful results for our purposes when run from target dir hence cd ${TARGET} && find .
-  # ...use find -print0 to print results delimited by null instead of newline (allows for filenames containing newline);
-  # ...set env variable $IFS to null, to preserve leading / trailing filename whitespace
-  # ...use read -d '' to read each null-delimited result into $SRC_FILE
-  # ...use read -r to avoid backslash interpretation in filenames (?)
   find . -type f -print0 | {
     # curly brace to define / manipulate variable DO_BK in subshell created by pipe
     DO_BK=1
     while IFS= read -r -d '' SRC_FILE; do
-      # SRC_FILE="${SRC_FILE}" # either ./file or ./path/to/file (redeclared for clarity)
+      SRC_FILE="${SRC_FILE}" # either ./file or ./path/to/file (redeclared for clarity)
       SRC_DIR="${SRC_FILE%/*}" # either . or ./path/to
       TARGET_FILE="${TARGET_DIR}/${SRC_FILE}" # either /target/./file or /target/./path/to/file (might not actually exist)
-      if [ -f "${TARGET_FILE}" ]; then  # either /target/./file or /target/./path/to/file
+      if [ -f "${TARGET_FILE}" ]; then
         if [ "${DO_BK}" -eq 1 ]; then
           DO_BK=0
           echo "The following duplicates will be moved to '${BK_DIR}'"
@@ -113,11 +99,15 @@ backup_and_clone() {
 }
 
 main() {
-  # TODO: slashes safe in strings, correct? no trailing slash, correct?
   REMOTE_URL="${1}"
   TARGET_DIR="${HOME}"
 
   backup_and_clone "${REMOTE_URL}" "${TARGET_DIR}"
 }
 
-main "$@"
+if [ "$#" -gt "0" ]; then
+  main "${1}"
+else
+  echo "Need to supply <url> as argument"
+  exit 1
+fi
