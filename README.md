@@ -41,7 +41,7 @@ dotfiles-git add .bashrc
 after committing, push to your remote
 
 ```bash
-dotfiles-git remote add origin <URL>
+dotfiles-git remote add origin <url>
 git push -u origin master
 ```
 
@@ -56,7 +56,7 @@ backup or remove any dotfiles in `$HOME` that would otherwise be duplicated
 clone to a bare repo in `$HOME`
 
 ```bash
-git clone --bare <URL> "${HOME}/.dotfiles.git"
+git clone --bare <url> "${HOME}/.dotfiles.git"
 ```
 move all dotfiles from master branch into `$HOME`
 
@@ -68,10 +68,10 @@ git --git-dir="${HOME}/.dotfiles.git" --work-tree="${HOME}" checkout master .
 
 this will clone to a bare repo in `$HOME`, move duplicates to `$HOME/.dotfiles.bk`, and then move dotfiles from master branch into `$HOME`
 
-make sure to replace `<URL>` with the remote URL
+make sure to replace `<url>` with the remote URL
 
 ```bash
-bash <(curl -fsS https://raw.githubusercontent.com/joeptacek/dotfiles-setup/master/dotfiles-install) <URL>
+bash <(curl -fsS https://raw.githubusercontent.com/joeptacek/dotfiles-setup/master/dotfiles-install) <url>
 ```
 
 ## notes
