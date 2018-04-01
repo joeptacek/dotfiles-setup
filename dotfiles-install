@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
 
-# TODO: THIS SCRIPT IS UNTESTED (setting $REMOTE_URL via arg)
-
-# TODO: use traps for graceful exits and cleanup?
-# TODO: optionally skip backup
+# TODO: use traps for graceful exits and cleanup
+# TODO: optionally skip / discard backup
 
 set -o errexit # not a silver bullet
 set -o nounset # errors on unbound variables
@@ -27,7 +25,7 @@ backup_and_clone() {
     if [ "${YN}" != '' ]; then
       echo # newline after read unless null input (user hit enter)
     fi
-    # using double bracket bash keyword for regex
+    # using double bracket test for regex
     if [[ "${YN}" =~ ^[Yy]$ ]]; then
       echo "Removing old '${BARE_GIT_DIR}'"
       rm -rf "${BARE_GIT_DIR}"
@@ -42,30 +40,29 @@ backup_and_clone() {
   echo "Cloning from '${REMOTE_URL}' to new bare repository at '${BARE_GIT_DIR}'"
   git clone --bare "${REMOTE_URL}" "${BARE_GIT_DIR}"
 
-  # possibly test whether directory already exists (seems very unlikely)?
   echo "Creating temorary directory '${TMP_DIR}'"
-  mkdir "${TMP_DIR}"
+  mkdir "${TMP_DIR}" # TODO: exit on error (without -p flag, will error on the rare chance $TMP_DIR already exists)
+  OLD_WD="$(pwd)"
+  cd "${TMP_DIR}" # for checkout master .
 
-  echo "Checking out dotfiles from bare repository using '${TMP_DIR}' as working tree"
-  git --git-dir="${BARE_GIT_DIR}" --work-tree="${TMP_DIR}" checkout master . # checkout all files (.) from master (can't use -- here for tree-ish)
+  echo "Checking out dotfiles from bare repository, using '${TMP_DIR}' as working tree"
+  git --git-dir="${BARE_GIT_DIR}" --work-tree="${TMP_DIR}" checkout master . # revert contents of current dir (.) to match master
 
   echo "Preparing to move the following dotfiles from the repository into the target directory '${TARGET_DIR}'"
-  OLD_WD="$(pwd)"
-  cd "${TMP_DIR}" # find returns more useful results for our purposes when run from target dir hence cd ${TARGET} && find .
 
-  # TODO: clarify what's best to represent null string $'\0' vs. ''
-  # alternatively could use find . -type f -exec but it could get kind of messy executing multiple commands in nested conditionals
-  # ...use find -print0 to print results delimited by null instead of newline (allows for filenames containing newline)
-  # ...set env variable $IFS to null, to preserve leading / trailing filename whitespace
-  # ...use read -d '' to read each null-delimited result into $SRC_FILE
-  # ...use read -r to avoid backslash interpretation in filenames (?)
-  find . -type f -print0 | while IFS= read -r -d '' RESULT; do echo " ${RESULT#./}"; done
+  # find returns more useful results for our purposes when run from tmp dir
+  # alternatively: could use find . -type f -exec but it could get kind of messy executing multiple commands in nested conditionals
+  find . -type f -print0 | while IFS= read -r -d '' RESULT; do echo "> ${RESULT#./}"; done
+  # ...using find -print0 to print results delimited by null instead of newline (allows for filenames containing newline)
+  # ...setting env variable $IFS to null, to preserve leading / trailing filename whitespace
+  # ...using read -d '' to read each null-delimited result into $SRC_FILE TODO: clarify what's best to represent null string $'\0' vs. ''
+  # ...using read -r to avoid backslash interpretation in filenames (?)
 
-  BK_DIR="${TARGET_DIR}/.${REMOTE_NAME}.bk/${NOW}" # e.g., /target/.dotfiles.bk
+  BK_DIR="${TARGET_DIR}/.${REMOTE_NAME}.bk/${NOW}"
   echo "Checking if any of the dotfiles already exist at the target directory"
 
   find . -type f -print0 | {
-    # curly brace to define / manipulate variable DO_BK in subshell created by pipe
+    # curly brace to work with variable $DO_BK in subshell created by pipe
     DO_BK=1
     while IFS= read -r -d '' SRC_FILE; do
       SRC_FILE="${SRC_FILE}" # either ./file or ./path/to/file (redeclared for clarity)
@@ -74,9 +71,9 @@ backup_and_clone() {
       if [ -f "${TARGET_FILE}" ]; then
         if [ "${DO_BK}" -eq 1 ]; then
           DO_BK=0
-          echo "The following duplicates will be moved to '${BK_DIR}'"
+          echo "Moving files to backup directory '${BK_DIR}'"
         fi
-        echo " ${SRC_FILE#./}"
+        echo "> ${SRC_FILE#./}"
         BK_SUBDIR="${BK_DIR}/${SRC_DIR}" # either /target/.name.bk/. or /target/.name.bk/./path/to
         mkdir -p "${BK_SUBDIR}" # create subdirs as necessary (including /target/name.bk/. itself if doesn't already exist)
         mv "${TARGET_FILE}" "${BK_SUBDIR}" # move to backup dir
@@ -86,16 +83,29 @@ backup_and_clone() {
       echo "No local duplicates"
     fi
   }
-  cd "${OLD_WD}"
 
-  echo "Checking out dotfiles from master using '${TARGET_DIR}' as working tree"
-  git --git-dir="${BARE_GIT_DIR}" --work-tree="${TARGET_DIR}" checkout master .
+  cd "${TARGET_DIR}" # for checkout master .
+  echo "Checking out dotfiles from master, using '${TARGET_DIR}' as working tree"
+  git --git-dir="${BARE_GIT_DIR}" --work-tree="${TARGET_DIR}" checkout master . # revert contents of current dir (.) to match master
 
   echo "Removing temporary directory '${TMP_DIR}'"
   rm -rf "${TMP_DIR}"
 
-  echo "Use the following format to use git with versioned files in '${TARGET_DIR}'"
-  echo "git status --git-dir=${BARE_GIT_DIR} --work-tree=${TARGET_DIR}"
+  if [ -d "${BK_DIR}" ]; then
+    IFS= read -n 1 -rp "Keep backup? [Y/n] " YN
+    if [ "${YN}" != '' ]; then
+      echo
+    fi
+    if [[ "${YN}" =~ ^[Nn]$ ]]; then
+      echo "Removing backup '${BK_DIR}'"
+      rm -rf "${BK_DIR}"
+    else
+      echo "Keeping backup '${BK_DIR}'"
+    fi
+  fi
+
+  cd "${OLD_WD}"
+  echo "Done"
 }
 
 main() {
@@ -108,6 +118,7 @@ main() {
 if [ "$#" -gt "0" ]; then
   main "${1}"
 else
+  # TODO: case for argument is literally <url>, copy-pasted from readme
   echo "Need to supply <url> as argument"
   exit 1
 fi

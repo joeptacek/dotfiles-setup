@@ -1,5 +1,5 @@
-# this .gitignore should be in working directory $HOME
-# .git directory should be $HOME/.dotfiles.git (bare repo)
+# this .gitignore should be in $HOME, the working directory for .dotfiles.git
+# .dotfiles.git should live in a bare repository inside the working directory
 
 # ignore everything in root of $HOME including:
 # regular directories, files, etc.

@@ -1,10 +1,6 @@
 # dotfiles setup
 
-manage dotfiles with git
-
-## TODO
-
-- test new install script, as used below (should accept URL arg, fail if no arg)
+track dotfiles with git
 
 ## initial setup
 
@@ -53,7 +49,7 @@ e.g., setting up an existing dotfiles repo on another machine
 
 backup or remove any dotfiles in `$HOME` that would otherwise be duplicated
 
-clone to a bare repo in `$HOME`
+clone from `<url>` to a bare repo in `$HOME`
 
 ```bash
 git clone --bare <url> "${HOME}/.dotfiles.git"
@@ -68,7 +64,7 @@ git --git-dir="${HOME}/.dotfiles.git" --work-tree="${HOME}" checkout master .
 
 this will clone to a bare repo in `$HOME`, move duplicates to `$HOME/.dotfiles.bk`, and then move dotfiles from master branch into `$HOME`
 
-make sure to replace `<url>` with the remote URL
+at the end of this command, make sure to replace `<url>` with the remote URL
 
 ```bash
 bash <(curl -fsS https://raw.githubusercontent.com/joeptacek/dotfiles-setup/master/dotfiles-install) <url>
@@ -83,7 +79,7 @@ echo ".dotfiles.git" > "${HOME}/.gitignore"
 dotfiles-git config --local status.showUntrackedFiles no
 ```
 
-## further reading
+## see also
 
 * [hacker news thread](https://news.ycombinator.com/item?id=11070797)
 * [atlassian blog post](https://developer.atlassian.com/blog/2016/02/best-way-to-store-dotfiles-git-bare-repo/)
