@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # TODO: use traps for graceful exits and cleanup
-# TODO: optionally skip / discard backup
+# TODO: set up git to track remote
 
 set -o errexit # not a silver bullet
 set -o nounset # errors on unbound variables
