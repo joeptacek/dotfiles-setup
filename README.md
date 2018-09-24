@@ -38,7 +38,7 @@ after committing, push to your remote
 
 ```bash
 dotfiles-git remote add origin <url>
-git push -u origin master
+dotfiles-git push -u origin master
 ```
 
 ## cloning from remote
@@ -62,7 +62,7 @@ git --git-dir="${HOME}/.dotfiles.git" --work-tree="${HOME}" checkout master .
 
 ### bash script
 
-this will clone to a bare repo in `$HOME`, move duplicates to `$HOME/.dotfiles.bk`, and then move dotfiles from master branch into `$HOME`
+this will clone to a bare repo at `$HOME/.dotfiles.git`, move duplicates to `$HOME/.dotfiles.bk`, and then move dotfiles from master branch into `$HOME`
 
 at the end of this command, make sure to replace `<url>` with the remote URL
 
