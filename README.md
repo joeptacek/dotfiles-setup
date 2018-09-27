@@ -70,6 +70,14 @@ at the end of this command, make sure to replace `<url>` with the remote URL
 bash <(curl -fsS https://raw.githubusercontent.com/joeptacek/dotfiles-setup/master/dotfiles-install) <url>
 ```
 
+### pushing back to remote
+
+cloning to a bare repository doesn't create any remote-tracking branches (unlike typical clone). in order to push any changes, must first set remote as upstream.
+
+```bash
+dotfiles-git push -u origin master
+```
+
 ## notes
 
 instead of explicitly ignoring non-dotfiles with `.gitignore`, you can just have git keep quiet about untracked files; remove everything from `.gitignore` except `.dotfiles.git` itself
