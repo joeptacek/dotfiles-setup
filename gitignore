@@ -1,5 +1,5 @@
-# this .gitignore should be in $HOME, the working directory for .dotfiles.git
-# .dotfiles.git should live in a bare repository inside the working directory
+# git directory is $HOME/.dotfiles.git (bare repo)
+# working directory is $HOME
 
 # ignore everything in root of $HOME including:
 # regular directories, files, etc.
@@ -7,7 +7,13 @@
 # the repo should also ignore itself (.dotfiles.git)
 /*
 
-# don't ignore this .gitignore
+# need to un-ignore parent dirs before un-ignoring any of their contents
+# e.g., !/.bundle/
+
+# re-ignore contents of parents; whitelist specific items below
+# e.g., /.bundle/*
+
+# don't ignore things related to the repo
 !.gitignore
 
-# don't ignore the main dotfiles (below)
+# don't ignore the main dotfiles (everything below)
